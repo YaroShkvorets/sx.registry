@@ -17,15 +17,18 @@ void registrySx::setswap( const name contract )
     for ( const auto token : _tokens ) {
         tokens.insert( token.sym.code() );
     }
-    check( tokens.size(), "contract has zero tokens");
 
     // add/modify swap contract
     auto itr = _swap.find( contract.value );
-    if ( itr != _swap.end() ) {
+    if ( itr == _swap.end() ) {
+        check( tokens.size(), "contract has zero tokens");
         _swap.emplace( get_self(), [&]( auto& row ){
             row.contract = contract;
             row.tokens = tokens;
         });
+    // delete if contract has zero tokens
+    } else if ( !tokens.size() ) {
+        _swap.erase( itr );
     } else {
         _swap.modify( itr, get_self(), [&]( auto& row ){
             row.tokens = tokens;
