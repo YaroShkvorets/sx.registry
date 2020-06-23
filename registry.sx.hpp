@@ -16,6 +16,7 @@ public:
      *
      * - `{name} contract` - swap contract account name
      * - `{set<symbol_code>} tokens` - supported tokens
+     * - `{list<extended_symbol>} ext_tokens` - supported tokens
      *
      * ### example
      *
@@ -26,8 +27,9 @@ public:
      * }
      */
     struct [[eosio::table("swap")]] swap_row {
-        name                        contract;
-        set<symbol_code>            tokens;
+        name                    contract;
+        set<symbol_code>        tokens;
+        set<extended_symbol>    ext_tokens;
 
         uint64_t primary_key() const { return contract.value; }
     };
