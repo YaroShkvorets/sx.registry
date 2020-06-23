@@ -23,7 +23,7 @@ cleos get table registry.sx registry.sx swap
 
 ```json
 {
-    "contract": "eosdt.sx",
+    "contract": "swap.sx",
     "tokens": ["EOS", "EOSDT", "USDT"],
     "ext_tokens": [
         { "sym": "4,EOS", "contract": "eosio.token" },
