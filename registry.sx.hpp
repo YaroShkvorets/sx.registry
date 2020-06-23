@@ -16,15 +16,21 @@ public:
      *
      * - `{name} contract` - swap contract account name
      * - `{set<symbol_code>} tokens` - supported tokens
-     * - `{list<extended_symbol>} ext_tokens` - supported tokens
+     * - `{set<extended_symbol>} ext_tokens` - supported extended symbols
      *
      * ### example
      *
      * ```json
      * {
      *     "contract": "eosdt.sx",
-     *     "tokens": ["EOS", "EOSDT", "USDT"]
+     *     "tokens": ["EOS", "EOSDT", "USDT"],
+     *     "ext_tokens": [
+     *         { "sym": "4,EOS", "contract": "eosio.token" },
+     *         { "sym": "4,USDT", "contract": "tethertether" },
+     *         { "sym": "9,EOSDT", "contract": "eosdtsttoken" }
+     *     ]
      * }
+     * ```
      */
     struct [[eosio::table("swap")]] swap_row {
         name                    contract;
