@@ -1,5 +1,4 @@
-#include <swap.sx/swap.sx.hpp>
-
+#include "../sx.swap/swap.sx.hpp"
 #include "registry.sx.hpp"
 
 [[eosio::action]]
