@@ -104,6 +104,8 @@ void registrySx::setdfs( const asset requirement )
         registrySx::dfs_table dfs( get_self(), get_self().value );
         add_pair( dfs, row.reserve1.symbol.code(), row.reserve0.symbol.code(), row.mid );
         add_pair( dfs, row.reserve0.symbol.code(), row.reserve1.symbol.code(), row.mid );
+        add_token( row.sym0, row.contract0 );
+        add_token( row.sym1, row.contract1 );
     }
 }
 
@@ -123,6 +125,21 @@ void registrySx::add_pair( T& table, const symbol_code base, const symbol_code q
     } else if ( itr->quotes.at(quote) != pair_id ) {
         table.modify( itr, get_self(), [&]( auto& row ) {
             row.quotes[quote] = pair_id;
+        });
+    }
+}
+
+void registrySx::add_token( const symbol sym, const name contract )
+{
+    // find
+    registrySx::tokens_table table( get_self(), get_self().value );
+    auto itr = table.find( sym.code().raw() );
+
+    // does not exist - create
+    if ( itr == table.end() ) {
+        table.emplace( get_self(), [&]( auto& row ) {
+            row.sym = sym;
+            row.contract = contract;
         });
     }
 }

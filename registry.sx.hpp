@@ -44,7 +44,7 @@ public:
     /**
      * ## TABLE `defibox`
      *
-     * - `{symbol_code} base` - base symbol code
+     * - `{extended_symbol} base` - base symbol code
      * - `{map<symbol_code, uint64_t>} quotes` - supported quote pairs
      *
      * ### example
@@ -73,6 +73,15 @@ public:
         uint64_t primary_key() const { return base.raw(); }
     };
     typedef eosio::multi_index< "dfs"_n, dfs_row > dfs_table;
+
+
+    struct [[eosio::table("tokens")]] tokens_row {
+        symbol          sym;
+        name            contract;
+
+        uint64_t primary_key() const { return sym.code().raw(); }
+    };
+    typedef eosio::multi_index< "tokens"_n, tokens_row > tokens_table;
 
     /**
      * ## ACTION `setswap`
@@ -132,4 +141,6 @@ private:
 
     template <typename T>
     void clear_table( T& table );
+
+    void add_token( const symbol sym, const name contract );
 };
