@@ -14,3 +14,4 @@ cleos set contract registry.sx . registry.sx.wasm registry.sx.abi
 
 # set swap
 cleos push action registry.sx setswap '["swap.sx"]' -p registry.sx
+cleos push action registry.sx setswap '["stable.sx"]' -p registry.sx

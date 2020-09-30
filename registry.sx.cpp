@@ -1,4 +1,6 @@
 #include "../sx.swap/swap.sx.hpp"
+#include "swap.defi.hpp"
+#include "dfs.hpp"
 #include "registry.sx.hpp"
 
 [[eosio::action]]
@@ -47,4 +49,92 @@ void registrySx::setswap( const name contract )
             row.ext_tokens = ext_tokens;
         });
     }
+}
+
+
+[[eosio::action]]
+void registrySx::clear()
+{
+    require_auth( get_self() );
+
+    registrySx::defibox_table _defibox( get_self(), get_self().value );
+    registrySx::dfs_table _dfs( get_self(), get_self().value );
+
+    clear_table( _dfs );
+    clear_table( _defibox );
+}
+
+template <typename T>
+void registrySx::clear_table( T& table )
+{
+    auto itr = table.begin();
+    while ( itr != table.end() ) {
+        itr = table.erase( itr );
+    }
+}
+
+[[eosio::action]]
+void registrySx::setdefibox( const asset requirement )
+{
+    require_auth( get_self() );
+
+    defibox::pairs _pairs( "swap.defi"_n, "swap.defi"_n.value );
+
+    for ( const auto row : _pairs ) {
+        if ( !is_requirement( row.reserve0, requirement ) && !is_requirement( row.reserve1, requirement ) ) continue;
+
+        // add both directions
+        registrySx::defibox_table defibox( get_self(), get_self().value );
+        add_pair( defibox, row.reserve1.symbol.code(), row.reserve0.symbol.code(), row.id );
+        add_pair( defibox, row.reserve0.symbol.code(), row.reserve1.symbol.code(), row.id );
+    }
+}
+
+[[eosio::action]]
+void registrySx::setdfs( const asset requirement )
+{
+    require_auth( get_self() );
+
+    dfs::markets _markets( "defisswapcnt"_n, "defisswapcnt"_n.value );
+
+    for ( const auto row : _markets ) {
+        if ( !is_requirement( row.reserve0, requirement ) && !is_requirement( row.reserve1, requirement ) ) continue;
+
+        // add both directions
+        registrySx::dfs_table dfs( get_self(), get_self().value );
+        add_pair( dfs, row.reserve1.symbol.code(), row.reserve0.symbol.code(), row.mid );
+        add_pair( dfs, row.reserve0.symbol.code(), row.reserve1.symbol.code(), row.mid );
+    }
+}
+
+template <typename T>
+void registrySx::add_pair( T& table, const symbol_code base, const symbol_code quote, const uint64_t pair_id )
+{
+    // find
+    auto itr = table.find( base.raw() );
+
+    // does not exist - create
+    if ( itr == table.end() ) {
+        table.emplace( get_self(), [&]( auto& row ) {
+            row.base = base;
+            row.quotes[quote] = pair_id;
+        });
+    // if not modified - modify
+    } else if ( itr->quotes.at(quote) != pair_id ) {
+        table.modify( itr, get_self(), [&]( auto& row ) {
+            row.quotes[quote] = pair_id;
+        });
+    }
+}
+
+/**
+ * Must meet minimum requirement
+ *
+ * 1. must match symbol
+ * 2. quantity must exceed requirement
+ */
+bool registrySx::is_requirement( const asset quantity, const asset requirement )
+{
+    if ( quantity.symbol == requirement.symbol && quantity >= requirement ) return true;
+    return false;
 }
