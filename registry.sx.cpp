@@ -1,5 +1,6 @@
-#include "../sx.swap/swap.sx.hpp"
-#include "swap.defi.hpp"
+#include <sx.defibox/defibox.hpp>
+#include <sx.swap/swap.sx.hpp>
+
 #include "dfs.hpp"
 #include "registry.sx.hpp"
 
@@ -58,10 +59,12 @@ void registrySx::clear()
     require_auth( get_self() );
 
     registrySx::defibox_table _defibox( get_self(), get_self().value );
-    registrySx::dfs_table _dfs( get_self(), get_self().value );
+    registrySx::tokens_table _tokens( get_self(), get_self().value );
+    // registrySx::dfs_table _dfs( get_self(), get_self().value );
 
-    clear_table( _dfs );
+    // clear_table( _dfs );
     clear_table( _defibox );
+    clear_table( _tokens );
 }
 
 template <typename T>
@@ -74,84 +77,93 @@ void registrySx::clear_table( T& table )
 }
 
 [[eosio::action]]
-void registrySx::setdefibox( const asset requirement )
+void registrySx::setdefibox( const extended_asset requirement )
 {
     require_auth( get_self() );
 
     defibox::pairs _pairs( "swap.defi"_n, "swap.defi"_n.value );
+    registrySx::defibox_table defibox( get_self(), get_self().value );
 
     for ( const auto row : _pairs ) {
-        if ( !is_requirement( row.reserve0, requirement ) && !is_requirement( row.reserve1, requirement ) ) continue;
+        if ( !is_requirement( row.token0.contract, row.reserve0, requirement ) && !is_requirement( row.token1.contract, row.reserve1, requirement ) ) continue;
 
         // add both directions
-        registrySx::defibox_table defibox( get_self(), get_self().value );
-        add_pair( defibox, row.reserve1.symbol.code(), row.reserve0.symbol.code(), row.id );
-        add_pair( defibox, row.reserve0.symbol.code(), row.reserve1.symbol.code(), row.id );
+        const extended_symbol base = extended_symbol{ row.token0.symbol, row.token0.contract };
+        const extended_symbol quote = extended_symbol{ row.token1.symbol, row.token1.contract };
+        add_pair( defibox, base, quote, row.id );
+        add_pair( defibox, quote, base, row.id );
     }
 }
 
-[[eosio::action]]
-void registrySx::setdfs( const asset requirement )
-{
-    require_auth( get_self() );
+// [[eosio::action]]
+// void registrySx::setdfs( const asset requirement )
+// {
+//     require_auth( get_self() );
 
-    dfs::markets _markets( "defisswapcnt"_n, "defisswapcnt"_n.value );
+//     dfs::markets _markets( "defisswapcnt"_n, "defisswapcnt"_n.value );
 
-    for ( const auto row : _markets ) {
-        if ( !is_requirement( row.reserve0, requirement ) && !is_requirement( row.reserve1, requirement ) ) continue;
+//     for ( const auto row : _markets ) {
+//         if ( !is_requirement( row.reserve0, requirement ) && !is_requirement( row.reserve1, requirement ) ) continue;
 
-        // add both directions
-        registrySx::dfs_table dfs( get_self(), get_self().value );
-        add_pair( dfs, row.reserve1.symbol.code(), row.reserve0.symbol.code(), row.mid );
-        add_pair( dfs, row.reserve0.symbol.code(), row.reserve1.symbol.code(), row.mid );
-        add_token( row.sym0, row.contract0 );
-        add_token( row.sym1, row.contract1 );
-    }
-}
+//         // add both directions
+//         registrySx::dfs_table dfs( get_self(), get_self().value );
+//         add_pair( dfs, row.reserve1.symbol.code(), row.reserve0.symbol.code(), row.mid );
+//         add_pair( dfs, row.reserve0.symbol.code(), row.reserve1.symbol.code(), row.mid );
+//         add_token( row.sym0, row.contract0 );
+//         add_token( row.sym1, row.contract1 );
+//     }
+// }
 
 template <typename T>
-void registrySx::add_pair( T& table, const symbol_code base, const symbol_code quote, const uint64_t pair_id )
+void registrySx::add_pair( T& table, const extended_symbol base, const extended_symbol quote, const uint64_t pair_id )
 {
+    const symbol_code base_symcode = base.get_symbol().code();
+    const symbol_code quote_symcode = quote.get_symbol().code();
+
     // find
-    auto itr = table.find( base.raw() );
+    auto itr = table.find( base_symcode.raw() );
 
     // does not exist - create
     if ( itr == table.end() ) {
         table.emplace( get_self(), [&]( auto& row ) {
             row.base = base;
-            row.quotes[quote] = pair_id;
+            row.pair_ids[quote_symcode] = pair_id;
+            row.contracts[quote_symcode] = quote.get_contract();
         });
     // if not modified - modify
-    } else if ( itr->quotes.at(quote) != pair_id ) {
+    } else if ( itr->pair_ids.at(quote_symcode) != pair_id ) {
         table.modify( itr, get_self(), [&]( auto& row ) {
-            row.quotes[quote] = pair_id;
+            row.pair_ids[quote_symcode] = pair_id;
+            row.contracts[quote_symcode] = quote.get_contract();
         });
     }
 }
 
-void registrySx::add_token( const symbol sym, const name contract )
-{
-    // find
-    registrySx::tokens_table table( get_self(), get_self().value );
-    auto itr = table.find( sym.code().raw() );
+// void registrySx::add_token( const symbol sym, const name contract )
+// {
+//     // find
+//     registrySx::tokens_table table( get_self(), get_self().value );
+//     auto itr = table.find( sym.code().raw() );
 
-    // does not exist - create
-    if ( itr == table.end() ) {
-        table.emplace( get_self(), [&]( auto& row ) {
-            row.sym = sym;
-            row.contract = contract;
-        });
-    }
-}
+//     // does not exist - create
+//     if ( itr == table.end() ) {
+//         table.emplace( get_self(), [&]( auto& row ) {
+//             row.sym = sym;
+//             row.contract = contract;
+//         });
+//     }
+// }
 
 /**
  * Must meet minimum requirement
  *
- * 1. must match symbol
- * 2. quantity must exceed requirement
+ * 1. must match symbol & contract
+ * 2. reserve must exceed requirement
  */
-bool registrySx::is_requirement( const asset quantity, const asset requirement )
+bool registrySx::is_requirement( const name contract, const asset reserve, const extended_asset requirement )
 {
-    if ( quantity.symbol == requirement.symbol && quantity >= requirement ) return true;
+    if ( contract != requirement.contract ) return false;
+    if ( reserve.symbol != requirement.quantity.symbol ) return false;
+    if ( reserve >= requirement.quantity ) return true;
     return false;
 }

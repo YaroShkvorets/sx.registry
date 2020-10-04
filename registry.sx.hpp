@@ -44,36 +44,40 @@ public:
     /**
      * ## TABLE `defibox`
      *
-     * - `{extended_symbol} base` - base symbol code
-     * - `{map<symbol_code, uint64_t>} quotes` - supported quote pairs
+     * - `{extended_symbol} base` - base symbols
+     * - `{map<symbol_code, uint64_t>} pair_ids` - pair ids
+     * - `{map<symbol_code, extended_symbol>} contracts` - contracts
      *
      * ### example
      *
      * ```json
      * {
-     *     "base": "EOS",
-     *     "quotes": {
-     *         { "key": "USDT", "value": 12 }
+     *     "base": {"contract":"eosio.token", "symbol": "4,EOS"},
+     *     "pair_ids": [
+     *         {"key": "USDT", "value": 12}
+     *     ]
+     *     "contracts": [
+     *         {"key": "USDT", "value": "tethertether"}
      *     ]
      * }
      * ```
      */
     struct [[eosio::table("defibox")]] defibox_row {
-        symbol_code                             base;
-        map<symbol_code, uint64_t>              quotes;
+        extended_symbol                     base;
+        map<symbol_code, uint64_t>          pair_ids;
+        map<symbol_code, name>              contracts;
 
-        uint64_t primary_key() const { return base.raw(); }
+        uint64_t primary_key() const { return base.get_symbol().code().raw(); }
     };
     typedef eosio::multi_index< "defibox"_n, defibox_row > defibox_table;
 
-    struct [[eosio::table("dfs")]] dfs_row {
-        symbol_code                         base;
-        map<symbol_code, uint64_t>          quotes;
+    // struct [[eosio::table("dfs")]] dfs_row {
+    //     symbol_code                         base;
+    //     map<symbol_code, uint64_t>          quotes;
 
-        uint64_t primary_key() const { return base.raw(); }
-    };
-    typedef eosio::multi_index< "dfs"_n, dfs_row > dfs_table;
-
+    //     uint64_t primary_key() const { return base.raw(); }
+    // };
+    // typedef eosio::multi_index< "dfs"_n, dfs_row > dfs_table;
 
     struct [[eosio::table("tokens")]] tokens_row {
         symbol          sym;
@@ -124,23 +128,23 @@ public:
      * ```
      */
     [[eosio::action]]
-    void setdefibox( const asset requirement );
+    void setdefibox( const extended_asset requirement );
 
-    [[eosio::action]]
-    void setdfs( const asset requirement );
+    // [[eosio::action]]
+    // void setdfs( const asset requirement );
 
     // action wrappers
     using setswap_action = eosio::action_wrapper<"setswap"_n, &registrySx::setswap>;
     using setdefibox_action = eosio::action_wrapper<"setdefibox"_n, &registrySx::setdefibox>;
 
 private:
-    bool is_requirement( const asset quantity, const asset requirement );
+    bool is_requirement( const name contract, const asset reserve, const extended_asset requirement );
 
     template <typename T>
-    void add_pair( T& table, const symbol_code source, const symbol_code target, const uint64_t pair_id );
+    void add_pair( T& table, const extended_symbol base, const extended_symbol quote, const uint64_t pair_id );
 
     template <typename T>
     void clear_table( T& table );
 
-    void add_token( const symbol sym, const name contract );
+    // void add_token( const symbol sym, const name contract );
 };
