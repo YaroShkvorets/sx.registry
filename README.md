@@ -4,8 +4,10 @@
 
 ## Quickstart
 
+Searching for Defibox EOS pairs.
+
 ```bash
-cleos get table registry.sx registry.sx swap
+cleos get table registry.sx registry.sx defibox --lower EOS --upper EOS
 ```
 
 ## Table of Content
