@@ -55,7 +55,7 @@ public:
      *     "base": {"contract":"eosio.token", "symbol": "4,EOS"},
      *     "pair_ids": [
      *         {"key": "USDT", "value": 12}
-     *     ]
+     *     ],
      *     "contracts": [
      *         {"key": "USDT", "value": "tethertether"}
      *     ]
@@ -72,20 +72,13 @@ public:
     typedef eosio::multi_index< "defibox"_n, defibox_row > defibox_table;
 
     // struct [[eosio::table("dfs")]] dfs_row {
-    //     symbol_code                         base;
-    //     map<symbol_code, uint64_t>          quotes;
+        // extended_symbol                     base;
+        // map<symbol_code, uint64_t>          pair_ids;
+        // map<symbol_code, name>              contracts;
 
     //     uint64_t primary_key() const { return base.raw(); }
     // };
     // typedef eosio::multi_index< "dfs"_n, dfs_row > dfs_table;
-
-    struct [[eosio::table("tokens")]] tokens_row {
-        symbol          sym;
-        name            contract;
-
-        uint64_t primary_key() const { return sym.code().raw(); }
-    };
-    typedef eosio::multi_index< "tokens"_n, tokens_row > tokens_table;
 
     /**
      * ## ACTION `setswap`

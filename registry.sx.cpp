@@ -1,7 +1,6 @@
 #include <sx.defibox/defibox.hpp>
 #include <sx.swap/swap.sx.hpp>
 
-#include "dfs.hpp"
 #include "registry.sx.hpp"
 
 [[eosio::action]]
@@ -59,12 +58,7 @@ void registrySx::clear()
     require_auth( get_self() );
 
     registrySx::defibox_table _defibox( get_self(), get_self().value );
-    registrySx::tokens_table _tokens( get_self(), get_self().value );
-    // registrySx::dfs_table _dfs( get_self(), get_self().value );
-
-    // clear_table( _dfs );
     clear_table( _defibox );
-    clear_table( _tokens );
 }
 
 template <typename T>
