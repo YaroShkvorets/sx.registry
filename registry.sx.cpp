@@ -1,16 +1,17 @@
-#include <sx.defibox/defibox.hpp>
 #include <sx.swap/swap.sx.hpp>
+#include <sx.defibox/defibox.hpp>
+#include <sx.dfs/dfs.hpp>
 
 #include "registry.sx.hpp"
 
 [[eosio::action]]
-void registrySx::setswap( const name contract )
+void sx::registry::setswap( const name contract )
 {
     // contract or registry is authorized
     if ( !has_auth( get_self() )) require_auth( contract );
 
     // tables
-    registrySx::swap_table _swap( get_self(), get_self().value );
+    sx::registry::swap_table _swap( get_self(), get_self().value );
     swapSx::tokens_table _tokens( contract, contract.value );
 
     // erase all rows
@@ -53,16 +54,16 @@ void registrySx::setswap( const name contract )
 
 
 [[eosio::action]]
-void registrySx::clear()
+void sx::registry::clear()
 {
     require_auth( get_self() );
 
-    registrySx::defibox_table _defibox( get_self(), get_self().value );
+    sx::registry::defibox_table _defibox( get_self(), get_self().value );
     clear_table( _defibox );
 }
 
 template <typename T>
-void registrySx::clear_table( T& table )
+void sx::registry::clear_table( T& table )
 {
     auto itr = table.begin();
     while ( itr != table.end() ) {
@@ -71,15 +72,16 @@ void registrySx::clear_table( T& table )
 }
 
 [[eosio::action]]
-void registrySx::setdefibox( const extended_asset requirement )
+void sx::registry::setdefibox( const extended_asset requirement )
 {
     require_auth( get_self() );
 
     defibox::pairs _pairs( "swap.defi"_n, "swap.defi"_n.value );
-    registrySx::defibox_table defibox( get_self(), get_self().value );
+    sx::registry::defibox_table defibox( get_self(), get_self().value );
 
     for ( const auto row : _pairs ) {
-        if ( !is_requirement( row.token0.contract, row.reserve0, requirement ) && !is_requirement( row.token1.contract, row.reserve1, requirement ) ) continue;
+        if ( !is_requirement( row.token0.contract, row.reserve0, requirement ) &&
+             !is_requirement( row.token1.contract, row.reserve1, requirement ) ) continue;
 
         // add both directions
         const extended_symbol base = extended_symbol{ row.token0.symbol, row.token0.contract };
@@ -89,27 +91,28 @@ void registrySx::setdefibox( const extended_asset requirement )
     }
 }
 
-// [[eosio::action]]
-// void registrySx::setdfs( const asset requirement )
-// {
-//     require_auth( get_self() );
+[[eosio::action]]
+void sx::registry::setdfs( const extended_asset requirement )
+{
+    require_auth( get_self() );
 
-//     dfs::markets _markets( "defisswapcnt"_n, "defisswapcnt"_n.value );
+    dfs::markets _markets( "defisswapcnt"_n, "defisswapcnt"_n.value );
+    sx::registry::dfs_table dfs( get_self(), get_self().value );
 
-//     for ( const auto row : _markets ) {
-//         if ( !is_requirement( row.reserve0, requirement ) && !is_requirement( row.reserve1, requirement ) ) continue;
+    for ( const auto row : _markets ) {
+        if ( !is_requirement( row.contract0, row.reserve0, requirement ) &&
+             !is_requirement( row.contract1, row.reserve1, requirement ) ) continue;
 
-//         // add both directions
-//         registrySx::dfs_table dfs( get_self(), get_self().value );
-//         add_pair( dfs, row.reserve1.symbol.code(), row.reserve0.symbol.code(), row.mid );
-//         add_pair( dfs, row.reserve0.symbol.code(), row.reserve1.symbol.code(), row.mid );
-//         add_token( row.sym0, row.contract0 );
-//         add_token( row.sym1, row.contract1 );
-//     }
-// }
+        // add both directions
+        const extended_symbol base = extended_symbol{ row.sym0, row.contract0 };
+        const extended_symbol quote = extended_symbol{ row.sym1, row.contract1 };
+        add_pair( dfs, base, quote, row.mid );
+        add_pair( dfs, quote, base, row.mid );
+    }
+}
 
 template <typename T>
-void registrySx::add_pair( T& table, const extended_symbol base, const extended_symbol quote, const uint64_t pair_id )
+void sx::registry::add_pair( T& table, const extended_symbol base, const extended_symbol quote, const uint64_t pair_id )
 {
     const symbol_code base_symcode = base.get_symbol().code();
     const symbol_code quote_symcode = quote.get_symbol().code();
@@ -133,10 +136,10 @@ void registrySx::add_pair( T& table, const extended_symbol base, const extended_
     }
 }
 
-// void registrySx::add_token( const symbol sym, const name contract )
+// void sx::registry::add_token( const symbol sym, const name contract )
 // {
 //     // find
-//     registrySx::tokens_table table( get_self(), get_self().value );
+//     sx::registry::tokens_table table( get_self(), get_self().value );
 //     auto itr = table.find( sym.code().raw() );
 
 //     // does not exist - create
@@ -154,7 +157,7 @@ void registrySx::add_pair( T& table, const extended_symbol base, const extended_
  * 1. must match symbol & contract
  * 2. reserve must exceed requirement
  */
-bool registrySx::is_requirement( const name contract, const asset reserve, const extended_asset requirement )
+bool sx::registry::is_requirement( const name contract, const asset reserve, const extended_asset requirement )
 {
     if ( contract != requirement.contract ) return false;
     if ( reserve.symbol != requirement.quantity.symbol ) return false;
