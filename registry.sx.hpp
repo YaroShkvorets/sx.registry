@@ -65,7 +65,7 @@ namespace sx {
          */
         struct [[eosio::table("defibox")]] defibox_row {
             extended_symbol                     base;
-            map<symbol_code, uint64_t>          quotes;
+            map<symbol_code, uint64_t>          pair_ids;
             map<symbol_code, name>              contracts;
 
             uint64_t primary_key() const { return base.get_symbol().code().raw(); }
@@ -74,7 +74,7 @@ namespace sx {
 
         struct [[eosio::table("dfs")]] dfs_row {
             extended_symbol                     base;
-            map<symbol_code, uint64_t>          quotes;
+            map<symbol_code, uint64_t>          pair_ids;
             map<symbol_code, name>              contracts;
 
             uint64_t primary_key() const { return base.get_symbol().code().raw(); }

@@ -59,7 +59,9 @@ void sx::registry::clear()
     require_auth( get_self() );
 
     sx::registry::defibox_table _defibox( get_self(), get_self().value );
+    sx::registry::dfs_table _dfs( get_self(), get_self().value );
     clear_table( _defibox );
+    clear_table( _dfs );
 }
 
 template <typename T>
