@@ -138,21 +138,6 @@ void sx::registry::add_pair( T& table, const extended_symbol base, const extende
     }
 }
 
-// void sx::registry::add_token( const symbol sym, const name contract )
-// {
-//     // find
-//     sx::registry::tokens_table table( get_self(), get_self().value );
-//     auto itr = table.find( sym.code().raw() );
-
-//     // does not exist - create
-//     if ( itr == table.end() ) {
-//         table.emplace( get_self(), [&]( auto& row ) {
-//             row.sym = sym;
-//             row.contract = contract;
-//         });
-//     }
-// }
-
 /**
  * Must meet minimum requirement
  *

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # compile
-eosio-cpp registry.sx.cpp
+eosio-cpp registry.sx.cpp -I ../
 
 # unlock wallet
 cleos wallet unlock --password $(cat ~/eosio-wallet/.pass)
