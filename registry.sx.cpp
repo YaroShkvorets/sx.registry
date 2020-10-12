@@ -1,6 +1,8 @@
+#include <sx.uniswap/uniswap.hpp>
 #include <sx.swap/swap.sx.hpp>
 #include <sx.defibox/defibox.hpp>
 #include <sx.dfs/dfs.hpp>
+#include <sx.hamburger/hamburger.hpp>
 
 #include "registry.sx.hpp"
 
@@ -12,7 +14,7 @@ void sx::registry::setswap( const name contract )
 
     // tables
     sx::registry::swap_table _swap( get_self(), get_self().value );
-    swapSx::tokens_table _tokens( contract, contract.value );
+    swapSx::tokens _tokens( contract, contract.value );
 
     // erase all rows
     if ( contract.value == 0 ) {
@@ -70,6 +72,25 @@ void sx::registry::clear_table( T& table )
     auto itr = table.begin();
     while ( itr != table.end() ) {
         itr = table.erase( itr );
+    }
+}
+
+
+[[eosio::action]]
+void sx::registry::sethamburger( const extended_asset requirement )
+{
+    require_auth( get_self() );
+
+    hamburger::pairs _pairs( "hamburgerswp"_n, "hamburgerswp"_n.value );
+    sx::registry::hamburger_table hamburger( get_self(), get_self().value );
+
+    for ( const auto row : _pairs ) {
+        if ( !is_requirement( row.token0.get_contract(), row.reserve0, requirement ) &&
+             !is_requirement( row.token1.get_contract(), row.reserve1, requirement ) ) continue;
+
+        // add both directions
+        add_pair( hamburger, row.token0, row.token1, row.id );
+        add_pair( hamburger, row.token1, row.token0, row.id );
     }
 }
 

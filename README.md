@@ -16,6 +16,7 @@ cleos get table registry.sx registry.sx defibox --lower EOS --upper EOS
 - [TABLE `swap`](#table-swap)
 - [ACTION `setswap`](#action-setswap)
 - [ACTION `setdefibox`](#action-setdefibox)
+- [ACTION `sethamburger`](#action-sethamburger)
 
 ## TABLE `defibox`
 
