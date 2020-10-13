@@ -3,6 +3,7 @@
 #include <sx.defibox/defibox.hpp>
 #include <sx.dfs/dfs.hpp>
 #include <sx.hamburger/hamburger.hpp>
+#include <sx.pizza/pizza.hpp>
 
 #include "registry.sx.hpp"
 
@@ -62,8 +63,10 @@ void sx::registry::clear()
 
     sx::registry::defibox_table _defibox( get_self(), get_self().value );
     sx::registry::dfs_table _dfs( get_self(), get_self().value );
-    clear_table( _defibox );
-    clear_table( _dfs );
+    sx::registry::pizza_table _pizza( get_self(), get_self().value );
+    // clear_table( _defibox );
+    // clear_table( _dfs );
+    clear_table( _pizza );
 }
 
 template <typename T>
@@ -131,6 +134,31 @@ void sx::registry::setdfs( const extended_asset requirement )
         const extended_symbol quote = extended_symbol{ row.sym1, row.contract1 };
         add_pair( dfs, base, quote, row.mid );
         add_pair( dfs, quote, base, row.mid );
+    }
+}
+
+
+[[eosio::action]]
+void sx::registry::setpizza( const extended_asset requirement )
+{
+    require_auth( get_self() );
+
+    pizza::pairs _pairs( "pzaswapcntct"_n, "pzaswapcntct"_n.value );
+    sx::registry::pizza_table pizza( get_self(), get_self().value );
+
+    for ( const auto row : _pairs ) {
+        pizza::total _total( "pzaswapcntct"_n, row.pair.value );
+        auto itr = _total.find( 0 );
+        if ( itr == _total.end() ) continue;
+
+        if ( !is_requirement( row.minor_contract, itr->total_minor, requirement ) &&
+             !is_requirement( row.major_contract, itr->total_major, requirement ) ) continue;
+
+        // add both directions
+        const extended_symbol base = extended_symbol{ row.minor_symbol, row.minor_contract };
+        const extended_symbol quote = extended_symbol{ row.major_symbol, row.major_contract };
+        add_pair( pizza, base, quote, row.pair.value );
+        add_pair( pizza, quote, base, row.pair.value );
     }
 }
 
